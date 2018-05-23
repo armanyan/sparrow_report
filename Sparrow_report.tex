@@ -53,7 +53,8 @@ Dr. Alain \textsc{Buys}
 \end{flushright}
 \end{minipage}\\[2cm]
 
-% If you don't want a supervisor, uncomment the two lines below and remove the section above
+% If you don't want a supervisor,
+%uncomment the two lines below and remove the section above
 %\Large \emph{Author:}\\
 %John \textsc{Smith}\\[3cm] % Your name
 
@@ -229,7 +230,17 @@ Dr. Alain \textsc{Buys}
 		The only problem related to preemption is context swithching. When a task is preemted, its current state and variables are stored locally, until the execution can be resumed. The problem Sparrow can face is the rightfullness of the context switching. It is possible that is some scenarios (for example when current task is extreamly short or very close to its end), the context switching will take more time than waiting for the current task to end. It is an important problem because Sparrow is a scheduler for short, low latency tasks. Also, after implementing the preemption scheduling, additional experiments should be made (and some experiment should be redone), to understant how the preemption affected the overall performance of Sparrow. It is possible that it will worsen the avarage task duration. If it is the case, the authors should make a choice between preemption and overall performance.
 		
 		
-		%The preemption should be done by the workers, not by the scheduling frameworks, because the shedulers do not know anything about the tasks that are currenty pending on worker, they only get notified when a worker is redy to execute it tasks. But, we can't wait until a worker notifies the scheduler with high priority task. Hence, we implementaton of Sparrow should be change in a way that the scheduling frameworks will send to workers the imformation about the priority of task thay want to schedule. When a worker resives a probing from a scheduler, it would verify if scheduler's task has higher priority than the currently executing task (or one of currently executing tasks). This will complicate the software of working machines because, currently, it is very simplistic - if there is a free slot, a new task with the higer
+	\subsection{Inter-job constrains}
+	
+		Inter-job contrains lets the owner of a job, force some additional constrains on the worker machines where the tasks of the job are going to be executed. For example, the owner the job A can forbide the scheduler to execute A on a working machine where some job B is executing. Because of the fact that the sheduling frameworks work independantly, it is not possible to force this king of constrains. The authors say that inter-job constrains will require considerable modification of Sparrow code base \cite[section 8]{sparrow}, but there might be a way of implementing it with no major modifications.
+		
+		To implement inter-job constrains of type ``tasks of job A should not be executed with tasks of job B'', sparrow can add an additional queue on each worker machine. A scheduling framework can ask the scheduler to place the reservations for some tasks to this special queue. The worker machines should execute the tasks from this queue only whene no other tasks from any other queue is executing. If all slots of a worker machine execute the tasks from the same job, it is obvious that that jobs tasks will not be executing with any other job tasks. This implementation may reqire some changes not only in the functioning of working machines, but also in the way how scheduling place their tasks on worker. The reason of this is the constrains that the authors forces to the scheduler \cite[section 5]{sparrow}: no sheduler should place more than one task on a single working machine, to avoid the gold rush effect.
+		
+		In the case if two jobs, A and B, should be executed on the same machine, the agent, that asigns the jobs to the sheduling frameworks, can merge these two jobs into one and the scheduler should place the tasks on the same worker.
+		
+		This is just one possible implementation of inter-job constrains that seems to be possible, and do not need mojor changes in the SParrow code base. But again, this implementation might slow down the performace of Sparrow, and needs to be well tested.
+		
+		Another implementation of inter-job cosntrains could be allowing message interactions between the workers and schedulers to find out some constrains can be respected before asigning jobs. But the problem with this solution is that in \cite[subsection 7.9]{sparrow} (also explained in \ref{probingratio}) we saw that if we encreasy the probing ration, the performance of Sparrow drops because workers spend too much time in exchanging messages. Hence, most likely, this solution will also reduce the preformance of Sparrow.
 		
 			
 		

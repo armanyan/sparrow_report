@@ -175,6 +175,7 @@ Dr. Alain \textsc{Buys}
         
         
         \subsubsection*{Why power of 2}
+        	\label{probingratio}
         
         	Another interesting point for authors was to find out if the probing ratio of 2 is the best choice or it is better to have a higher of lower probing ratio. To answer to that question, the authors performed two experiments where they varies the probing ratio, but kept constant the cluster load. The first experiment kept the cluster load at 80\% and the second one kept it at 90\%. The range of probing ratio was between 1.0 (random placement) to 3 (3 probings par task). The experiments showed that the best probing ratios are 1.5 and 2, because if the probing ratio is lower, the schedulers are not able to find idle workers, and if the probing ratio is higher, there is too much message exchange in the cluster and that also delays the probing decision. The authors choose the probing ratio of 2 because it is easier to have an integral probing ratio.
 
@@ -251,7 +252,24 @@ Dr. Alain \textsc{Buys}
 		The authors \cite[section 8]{sparrow} suggest that gang scheduling could be implemented using the bin packing problem. It is a mathematical problem of minimazing the number of bins we need to place a finit number of object into them. As it was explained \ref{batchsampling}, Sparrow uses batch samling to find the $N$ list loaded worker machines to place tasks on them. While it happens often that tasks are placed on idle machines \ref{theoreticalanalysis}, it is not guarantied. To trully implement gang scheduling, the scheduler need a central agent that can has view of the whole cluster. But implementing such kind of agent opposes to the principal idea of Sparrow. It will be difficlt to implement gang scheduling ina decentralized scheduler like Sparrow.
 		
 		One naive way of implementing it would be using preemption. If the tasks that should be gang-scheduled are given very high priority, they worker machines will pause currently executing tasks (if needed) to execute the new tasks in a gang. The only problem is that by doint so, we will have an overhead related to context switching (which is the initial reason to implement gang scheduling). Also, in this situation, if two gangs are overlapped, the second gang cand interruped the execution of the first gang, and, again, lead to overhead because of context switching.
-			
+		
+		%Query-level policies
+		
+	\subsection{Worker failures}
+	
+		The failures of scheduling frameworks are regullary probed every 100 ms in centralized manner, but the the failures of workers are not tracked at all. In the case if a worker failes, the schedulers will not know if it is functioning. If, during batch sampling, scheduler probes $N$ machines, only $N - m$ workers will actually try to claim a task from the scheduler, with $m$ the number of failed workers. The authors \cite{sparrow} did not give any information about what happens with the tasks that were executing on workers at the moment on fail.
+		
+		The worker failure conrol can be implemented in a centraliezed way, like scheduler failure control. The authors think that the best solution is to have a centralized agent that verifies the functioning of the workers, and placed the failed worker in a soft state list. The scheduluers will be periodically informed about the worker in the list so that they do not probe failed workers.
+		
+		The soft state is a termin usually used in networking. It means a list that is regulary cleared after a fixed period of time. In the case of worker failures, the list will contain the workers that are failed; once every $n$ ms, the list is emptied - if a worker is still unavailable, it should be replaced in the list; normally, $n$ should be equal to the time the central agent needs to detect and relanch a failed worker.
+	
+	\subsection{Dinamically adapting probing ratio}
+	
+		In the \cite[subsection 7.9]{sparrow} (also explained in \ref{preemption}), the authors already studied the effect of ratio. The experiment conlcuded that if we have a small probing ratio, it is difficult for scheduler to find lightly loaded machines and if the probing ratin is large, there is too many message echanges between worker and schedulers - this leads to overhead and dealays the speed of decision making. But this experiment was done only twice, once with 80\% cluster load and once with 90\% cluster load. These are very high cluster loads, and the cluster load is going to be variable. Moreover, \textit{Reiss and al} \cite{hetero} claim that the overall CPU usage of Google clusters does not exceed 60 \% (figure toref google). Hence, it is possible that the 2 is not the best solution.
+		
+		Is is possible to achieve conisderably better results by adjust the probing ratio to the clsuter load. If the cluster load is low, the schedulers could do more probes to be more succesfull in finding lightly loaded machines; if the cluster is highly load, the probong ratio should decrease to reduce the messaging overhead in the system. Obviousy, it would require to find out experientally the equation that adapts the probing ration the best, depending on the cluster load.
+		
+		The main difficulty of dynamically adapting the probing ration is the decentralism of Sparrow - to adapt the probing ration to the cluster load, Sparrow needs to determine this load. It would require to implement some mechnism that will keep track of the workers' load and tasks that are still to schedule. This mecanism can considerably change the architecture of Sparrow, and need a practial testing.
 		
 
 
@@ -260,49 +278,47 @@ Dr. Alain \textsc{Buys}
 \begin{thebibliography}{9}
 
 \bibitem{sparrow}
-  K. Ousterhout, P. Wendell, M. Zaharia, I. Stoica,
+  K. Ousterhout, P. Wendell, M. Zaharia, and I. Stoica,
   \textit{Sparrow: Distributed, Low Latency Scheduling},
-  SOSP '13,
+  In Proceedings of SOSP '13,
   Pages 69-84 ,
-  Farminton, Pennsylvania,
-  November 03 - 06,
   2013.
 
 \bibitem{omega}
-  M. Schwarzkopf, A. Konwinski, M. Abd-El-Malek, J. Wilkes,
+  M. Schwarzkopf, A. Konwinski, M. Abd-El-Malek, and J. Wilkes,
   \textit{Sparrow: Distributed, Low Latency Scheduling},
   EuroSys '13,
   Pages 351-364,
-  Prague, Czech Republic,
-  April 15 - 17,
   2013.
   
 \bibitem{mesos}
-  B. Hindman, A. Konwinski, M. Zaharia, A. Ghodsi, A. D. Joseph, Randy Katz, Scott Shenker, I. Stoica,
+  B. Hindman, A. Konwinski, M. Zaharia, A. Ghodsi, A. D. Joseph, Randy Katz, Scott Shenker, and I. Stoica,
   \textit{Mesos: A Platform for Fine-Grained Resource Sharing in the Data Center},
-  NSDI'11,
+  In Proceedings of NSDI'11,
   Pages 295-308,
-  Boston, Massachusetts,
-  March 30 - April 01,
   2011.
   
 \bibitem{borg}
-  A. Verma, L. Pedrosa, M. Korupolu,
+  A. Verma, L. Pedrosa, and M. Korupolu,
   \textit{Large-scale cluster management at Google with Borg},
-  EuroSys '15,
+  In Proceedings of EuroSys '15,
   Article No. 18,
-  Bordeaux, France,
-  April 21 - 24,
   2015.
 
 \bibitem{apollo}
-  E. Boutin, J. Ekanayake, W. Lin, B. Shi, J. Zhou, Z. Qian, M. Wu, L. Zho,
+  E. Boutin, J. Ekanayake, W. Lin, B. Shi, J. Zhou, Z. Qian, M. Wu, and L. Zho,
   \textit{Apollo: Scalable and Coordinated Scheduling for Cloud-Scale Computing},
-  OSDI' 14,
+  In Proceedings of OSDI' 14,
   Pages 285-300,
-  Broomfield, Colorado,
-  October 6 - 8,
   2014.
+  
+\bibitem{hetero}
+  C. Reiss, A. Tumanov, G. R. Ganger, R. H. Katz, and M. A. Kozuch
+  \textit{Heterogeneity and dynamicity of clouds at scale: Google trace analysis},
+  In Proceedings of SoCC,
+  Article No. 7,
+  2012.
+
 
 \end{thebibliography}
 

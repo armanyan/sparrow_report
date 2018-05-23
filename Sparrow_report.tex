@@ -103,6 +103,7 @@ Dr. Alain \textsc{Buys}
         
         
     \subsection{Batch Sampling}
+    	\label{batchsampling}
     
     	As it was stated, a job consist of some number of tasks, and power of 2 choices probes for each of this tasks individually two workers. This might not always return the best result. For example, if we have a job of two tasks, the probing for first task get return 2 workers with 3 and 4 pending tasks on them respectively, and the probing for second task can return workers with 1 and 2 pending tasks respectively. In this case the first task will be placed on the worker with 3 tasks and the second task will be placed in the worker with 1 task. But intuitively, it will be more efficient to place the first task on the worker with 2 pending tasks. This is exactly what \textit{Batch Sampling} does. When a job with $N$ tasks arrive, $2N$ random workers will be probed at the same time, and the tasks will be placed on the $N$ least loaded workers.
 
@@ -118,6 +119,7 @@ Dr. Alain \textsc{Buys}
 
 
 		\subsubsection*{Theoretical Analysis}
+			\label{theoreticalanalysis}
         
         	The authors did only one theoretical study of Sparrow. The point of this study was to discover the probability for a job to experience a zero wait time \textit{i.e.} the probability for all task of a job to be placed on idle machines.
             
@@ -227,7 +229,7 @@ Dr. Alain \textsc{Buys}
 		
 		Preemtion scheduling seems to be fairly easy to implement in Sparrow. For recall, Sparrow keeps $N$ priority queues on each working machines; rach of these queues is dedicated to tasks to only one level; when a new slot is empty, the worker is going to take the first reservation from the highes priority queue. If we implement preemption in Sparrow, then, each time a worker gets a new reservation, it should verify if the task in execution (or one of tasks in the execution) has lower priority than the new task.
 		
-		The only problem related to preemption is context swithching. When a task is preemted, its current state and variables are stored locally, until the execution can be resumed. The problem Sparrow can face is the rightfullness of the context switching. It is possible that is some scenarios (for example when current task is extreamly short or very close to its end), the context switching will take more time than waiting for the current task to end. It is an important problem because Sparrow is a scheduler for short, low latency tasks. Also, after implementing the preemption scheduling, additional experiments should be made (and some experiment should be redone), to understant how the preemption affected the overall performance of Sparrow. It is possible that it will worsen the avarage task duration. If it is the case, the authors should make a choice between preemption and overall performance.
+		The only problem related to preemption is context swithching. Context swithcing is the process of saving the state of a process (or task) in the memory until the moment its execution can be resumed, from the point where it was paused. Context switching is needed when a new process with higher priority needs to take the place of the process that is currentlly executing and is not finished yet. The fact of saving the context of paused pprocess and loading the context of the new process, leads to wasted CPU time. When a task is preemted, its current state and variables are stored locally, until the execution can be resumed. The problem Sparrow can face is the rightfullness of the context switching. It is possible that is some scenarios (for example when current task is extreamly short or very close to its end), the context switching will take more time than waiting for the current task to end. It is an important problem because Sparrow is a scheduler for short, low latency tasks. Also, after implementing the preemption scheduling, additional experiments should be made (and some experiment should be redone), to understant how the preemption affected the overall performance of Sparrow. It is possible that it will worsen the avarage task duration. If it is the case, the authors should make a choice between preemption and overall performance.
 		
 		
 	\subsection{Inter-job constrains}
@@ -241,7 +243,14 @@ Dr. Alain \textsc{Buys}
 		This is just one possible implementation of inter-job constrains that seems to be possible, and do not need mojor changes in the SParrow code base. But again, this implementation might slow down the performace of Sparrow, and needs to be well tested.
 		
 		Another implementation of inter-job cosntrains could be allowing message interactions between the workers and schedulers to find out some constrains can be respected before asigning jobs. But the problem with this solution is that in \cite[subsection 7.9]{sparrow} (also explained in \ref{probingratio}) we saw that if we encreasy the probing ration, the performance of Sparrow drops because workers spend too much time in exchanging messages. Hence, most likely, this solution will also reduce the preformance of Sparrow.
+
+	\subsection{Gang scheduling}
+	
+		Gang scheduling is a technique when some (or even all) tasks of a job are executed at the same time. Usually, this kind of scheduling is needed when different tasks need to communicate with each other during their execution. If these kind of tasks are not in execution in the same time, then, from time to time, some of them should be put into sleep while they wait until the moment when needed tasks can responde. If these kind of tasks are not executed in parallel, a havy overhead can be presend because of constant context switching.
 		
+		The authors \cite[section 8]{sparrow} suggest that gang scheduling could be implemented using the bin packing problem. It is a mathematical problem of minimazing the number of bins we need to place a finit number of object into them. As it was explained \ref{batchsampling}, Sparrow uses batch samling to find the $N$ list loaded worker machines to place tasks on them. While it happens often that tasks are placed on idle machines \ref{theoreticalanalysis}, it is not guarantied. To trully implement gang scheduling, the scheduler need a central agent that can has view of the whole cluster. But implementing such kind of agent opposes to the principal idea of Sparrow. It will be difficlt to implement gang scheduling ina decentralized scheduler like Sparrow.
+		
+		One naive way of implementing it would be using preemption. If the tasks that should be gang-scheduled are given very high priority, they worker machines will pause currently executing tasks (if needed) to execute the new tasks in a gang. The only problem is that by doint so, we will have an overhead related to context switching (which is the initial reason to implement gang scheduling). Also, in this situation, if two gangs are overlapped, the second gang cand interruped the execution of the first gang, and, again, lead to overhead because of context switching.
 			
 		
 

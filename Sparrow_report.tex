@@ -7,6 +7,7 @@
 \usepackage{indentfirst}
 \usepackage{float}
 \usepackage{hyperref}
+\usepackage{array}
 
 \begin{document}
 
@@ -167,20 +168,26 @@ Dr. Alain \textsc{Buys}
         	Another experiment that authors performed was executing queries of TPC-H benchmark on a cluster scheduled by Sparrow. TPC-H\footnote{TPC-H stands for Transaction Processing Council Ad-hoc/decision support benchmark} is a benchmark frequently used for testing the performances of database software. It contains sets of queries that are inspired by real-world scenarios.
             
             %TODO 9 issues
-            The authors composed 4 different sets of queries: the first set keeps the cluster load at 80\%, the second set contains the queries that have two groups of tasks that can not be processed in parallel, the third set contains the queries with task that have mixed durations, and the forth contains the queries with tasks that have different constraints.
+            The authors composed 4 different sets of queries: the first set keeps the cluster load at 80\%, the second set contains the jobs that have two groups of tasks that can not be processed in parallel, the third set contains the jobs with tasks of various durations, and the fourth set contains jobs with tasks that have different constraints.
             
-            The result of this experiment showed that, on average, Sparrow performed only 12\% worse than the ideal scheduler. The performance of the ideal scheduler was computed by supposing that it always placed tasks on idle workers (no task was queued, no job experienced any waiting time). In other words, the execution time of a job, scheduled with the ideal scheduler, is equal to the longest, non-parallel, sequence of tasks in it.
+            The result of this experiment shows that, on average, Sparrow performs only 12\% worse than the ideal scheduler. The performance of the ideal scheduler is computed by supposing that it always places the tasks on idle workers (no task is queued, no job experiences any waiting time). In other words, the execution time of a job, scheduled with the ideal scheduler, is equal to the longest, non-parallel, sequence of tasks in it.
+            
+            \begin{figure}
+            		\includegraphics[scale=0.5]{fig4}
+				\caption{q3, q4, q6, and q12 are respectively the first, the second, the third and the fourth sets.}            		
+            		\label{fig4}
+            \end{figure}
         
         
         \subsubsection*{Experiment with a scheduler's fail}
         
         	%TODO 6 issues
-        	Sparrow contains some number of simplistic scheduling frameworks and any of them can fail. In the case of a failure, it is necessary to be sure that the jobs assigned to the failed scheduler are still executed. For this purpose, each of the scheduling frameworks is launched with a list of backup scheduling frameworks, and Sparrow verifies every 100 ms that they are functional. If one of the frameworks fail, Sparrow will assign the jobs that were currently pending to the first scheduler in the backup list (of the failed scheduler). The intermediate progress of a job acquired before the failure will be lost. An experiment showed that the job that Sparrow relaunches a failed scheduler in 120ms from the moment of its fail. Because of the fact that the Sparrow is dealing with short tasks, only a few jobs will be penalized because of a scheduler's failure.
+        	Any of the simplistic scheduling frameworks of Sparrow can fail. In the case of a failure, it is necessary to be sure that the jobs assigned to the failed framework will be executed. For this purpose, each of them is launched with a list of backup scheduling frameworks, and Sparrow verifies every 100 ms that they are functional. If one of the frameworks fails, Sparrow will assign his jobs to the first framework in the backup list (of the failed scheduling framework). The intermediate progress of a job acquired before the failure will be lost. The experiment that authors performed showed that it takes 120 ms for Sparrow to detect and reassign the tasks of a failed framework. Because of the fact that Sparrow is dealing with short tasks, only a few jobs will be penalized because of the framework failure.
         
         
         \subsubsection*{Sparrow compared to a centralized scheduler}
         
-        	In a case of a centralized scheduler, all the scheduling decisions are made by a single agent. Because of it, this kind of schedulers are more convenient for High-Performance Computing. To prove that, the authors compared the performance of Sparrow with the performance of Sparks native centralized scheduler on a cluster at 80\% workload. The experiment showed that when the duration of the tasks are 1.3 second or less, the Spark's native scheduler is no longer able to work properly and experience infinite queuing.
+        	In a case of a centralized scheduler, all the scheduling decisions are made by a single agent. Because of it, this kind of schedulers is more convenient for High-Performance Computing. To prove this, the authors compared the performance of Sparrow with the performance of Sparks native centralized scheduler on a cluster at 80\% workload. The experiment showed that when the duration of the tasks are 1.3 second or less, the Spark's native scheduler is no longer able to work properly and experience infinite queuing, while Sparrow is able to correctly schedule for tasks of any duration.
         
         
         \subsubsection*{Sharing a cluster between multiple users}
@@ -189,24 +196,50 @@ Dr. Alain \textsc{Buys}
         	To analyze how fairly Sparrow is capable to share a cluster between different users, the authors performed an experiment with a cluster shared between two users. The first user always requires as many resources as possible from Sparrow all the time during the experiment. The second user requires no resources at all for ten seconds; then he requires 25\% of the cluster capacities for another 10 second; then he requires 50\% of the cluster capacities for another 10 seconds; then he requires only 25\% of the capacities for another 10 seconds; for the last 10 second interval, the second user requires no resources at all.
             
             %TODO 6 issues
-            The result of this experiment showed that Sparrow is able to fairly share the cluster between different users, but sometimes the cluster may be used not at the maximum of its capacities. The reason of this problem is related of the decentralized nature of Sparrow - it contains many scheduling frameworks that are not inter-connected, hence, they don't have the complete image of the cluster utilization by users.
+            The result of this experiment showed that Sparrow is able to fairly share the cluster between different users, but sometimes the cluster may be used not at the maximum of its capacities. The reason of this problem is related of the decentralized nature of Sparrow - it contains many scheduling frameworks that are not inter-connected, hence, they don't have the complete image of the cluster utilization by users. Figure \ref{fig5} illustrates the experiment.
+            
+            \begin{figure}
+            		\includegraphics[scale=.5]{fig5}
+            		\caption{Sparrow shares the cluster between two users.}
+            		\label{fig5}
+            \end{figure}
         
         
-        \subsubsection*{Shielding high priority tasks users from low priority users}
+        \subsubsection*{Shielding high priority tasks from low priority tasks}
         	 \label{preemption}
         	
         	%TODO 6 issues
-            An important aspect of a Sparrow is protecting users high priority user from low priority users. To do so, the authors implemented Sparrow in the following way: each worker has many queues - each of them contains only tasks with the same priority and no node has two queues with the tasks of the same priority. When a worker has completed a task, we will pull a task from the highest non-empty queue.
+            An important aspect of Sparrow is protecting high priority users from low priority users. To do so, the authors implemented Sparrow in the following way: each worker machine has many queues - each of them contains only tasks with the same priority and no node has two queues with the tasks of the same priority. When a worker is ready to execute a new task, he will pull a task from the highest non-empty queue.
             
             %TODO 5 issues
-            In this experiment, the authors kept the proportion of the high priority load at 25\% of the cluster capacities and varied the proportion of low priority load. The experiment showed that Sparrow is able to protect the high priority tasks from low priority task when the total cluster load is less than 100\%. But, when the total cluster load is at 100\% or more, the high priority get 40\% worse execution time.
-        
+            In this experiment, the authors kept the proportion of the high priority load at 25\% of the cluster capacities and varied the proportion of low priority load. The experiment showed that Sparrow is able to protect the high priority tasks from low priority task when the total cluster load is less than 100\%. But, when the total cluster load is at 100\% or more, the high priority get 40\% worse execution time. The table below shows the complete results of the experiment.
+            
+            \begin{figure}[H]
+            		\caption{HP stands for high priority workload, LP stands for low priority workload, the values outside the parentheses are the median response times and the values inside the parentheses are the 95th percentile response times.}
+                \begin{tabular}{ | c | c | c | c |}
+                    \hline
+                    HP load & LP load & HP response time in ms & LP response time in ms  \\ \hline
+                    0.25 & 0 & 106(111) & N/A  \\ \hline
+                    0.25 & 0.25 & 108(114) & 108(115) \\ \hline
+                    0.25 & 0.5 & 110(148) & 110(449) \\ \hline
+                    0.25 & 0.75 & 136(170) & 40.2k(46.2k) \\ \hline
+                    0.25 & 1.75 & 141(226) & 255k(270k) \\
+                    \hline
+                \end{tabular}
+        	\end{figure}
+        	
         
         \subsubsection*{Why power of 2}
         	\label{probingratio}
         
-        	%TODO 10 issues
-        	Another interesting point for authors was to find out if the probing ratio of 2 is the best choice or it is better to have a higher or lower probing ratio. To answer that question, the authors performed two experiments where they varied the probing ratio but kept constant the cluster load. The first experiment kept the cluster load at 80\% and the second one kept it at 90\%. The range of probing ratio was between 1.0 (random placement) to 3 (3 probings par task). The experiments showed that the best probing ratios are 1.5 and 2 because if the probing ratio is lower, the scheduling frameworks are not able to find idle workers, and if the probing ratio is higher, there is too much message exchange in the cluster and that also delays the probing decision. The authors choose the probing ratio of 2 because it is easier to have an integral probing ratio.
+        	%TODO 9 issues
+        Another interesting point for authors was to find out if the probing ratio of 2 is the best choice or it is better to have a higher or lower probing ratio. To answer that question, the authors performed two experiments where they varied the probing ratio at constant the cluster load. The first experiment kept the cluster load at 80\% and the second one kept it at 90\%. The range of probing ratio was between 1.0 (1 probing par task \textit{i.e.} random placement) to 3 (3 probings par task). The experiments showed that the best probing ratios are 1.5 and 2 because if the probing ratio is lower, the scheduling frameworks are not able to find idle workers, and if the probing ratio is higher, there is too much message exchange in the cluster and that also delays the probing decision. The authors choose the probing ratio of 2 because it is easier to have an integral probing ratio. The result of the experiment is in figure \ref{fig6}.
+        
+        \begin{figure}
+        		\includegraphics[scale=.5]{fig6}
+        		\caption{Effect of probe ratio on job response time at two different cluster loads. Whiskers depict 5th and 95th percentiles; boxes depict median, 25th, and 75th percentiles}
+        		\label{fig6}
+        \end{figure}
 
 
 \section{Main architecture of cluster scheduling}
@@ -214,7 +247,7 @@ Dr. Alain \textsc{Buys}
 	The authors of Sparrow adapted a specific architecture for the process of scheduling tasks. To better understand the choices they made during implementing Sparrow, it will be useful to take a look at mainstream cluster scheduler.
     
     %TODO remove the explanation of schedulers? If not fix, the paragraph
-	Every major company adapts its cluster scheduler to its needs, but basically, one can divide them into five large categories: monolithic, two-level and shared state. Monolithic architecture is the most popular. A scheduler of this type is using a centralized algorithm for all jobs. For example, Borg, created and used at Google, is a monolithic scheduler. Two-level schedulers have a single resource manager and much parallel scheduling (like Sparrow). The parallel schedulers are not necessarily homogeneous, and the single resource manager shares the resources between them. Mesos \cite{mesos} is an example of this kind of scheduler. In the case of shared state schedulers, there are many parallel, not necessarily homogeneous, scheduling frameworks. Each of the schedulers has a complete view of the cluster load, and there are no direct interactions between schedulers. Omega \cite{omega} is an example of shared state cluster. The architecture of shared state clusters is the closest, among the 3 aforementioned architectures, to the architecture of Sparrow. Figure 1 illustrates an overview of the three architectures.
+	Every major company adapts its cluster scheduler to its needs, but basically, one can divide them into five large categories: monolithic, two-level, shared state, fully-distributed, and hybrid. %Monolithic architecture is the most popular. A scheduler of this type is using a centralized algorithm for all jobs. For example, Borg, created and used at Google, is a monolithic scheduler. Two-level schedulers have a single resource manager and much parallel scheduling (like Sparrow). The parallel schedulers are not necessarily homogeneous, and the single resource manager shares the resources between them. Mesos \cite{mesos} is an example of this kind of scheduler. In the case of shared state schedulers, there are many parallel, not necessarily homogeneous, scheduling frameworks. Each of the schedulers has a complete view of the cluster load, and there are no direct interactions between schedulers. Omega \cite{omega} is an example of shared state cluster. The architecture of shared state clusters is the closest, among the 3 aforementioned architectures, to the architecture of Sparrow. Figure 1 illustrates an overview of the three architectures.
     
     \begin{figure}
     	\includegraphics[scale=.6]{architectures}
@@ -223,44 +256,46 @@ Dr. Alain \textsc{Buys}
 
 	\subsection{Monolithic scheduling}
     
-    	%TODO add Borg
-    	As it was stated above, the monolithic schedulers are the most popular cluster schedulers. They have a central agent that performs all scheduling decisions and sees the cluster resources as a single entity. This approach is most suited for high-performance computing because in HPC we worry less about the speed of execution then in modern clusters. Usually, the centralized agent is a complicated algorithm because it must contain all the policies and constraints of the system. Also, the scheduling algorithm gets updated over time which leads to a very complicated code base, and a difficulties to future updates. But the most dangerous situation that can be faced with a monolithic scheduler is the side effects. When the code gets complicated, a lot of undocumented side effects appear, and the developers tends to use them in order to optimize their programs. The problem is that once the code of the scheduler is changed, some side effects can disappear and the programs using them will no longer work.
+    	%TODO add Borg story when developers use side effects
+        Monolithic schedulers are the most popular cluster schedulers. They have a central agent that performs all scheduling decisions and sees the cluster resources as a single entity. This approach is most suited for high-performance computing because in HPC we worry less about the speed of execution than in modern clusters. 
         
-        %TODO 11 issues
-        Usually, the central agent contains does all the necessary functions to compute the priority of a task. After the priority is computed, all tasks are ordered by their priority and the execution will start by the tasks in the head of the list. Some schedulers support code paths with the jobs. In this case, the actor that submits the job can also submit a path to a code that the scheduler will execute in order to find the priority of a task. In this way, the standard policies of the scheduler can be overridden for certain jobs.
+        Usually, the centralized agent is a complicated algorithm because it must contain all the policies and constraints of the system. Also, the scheduling algorithm gets updated over time which leads to a very complicated code base, and difficulties for future updates. But the most dangerous situation that can be faced with a monolithic scheduler is the side effects. When the code gets complicated, a lot of undocumented side effects appear, and the developers tend to use them in order to optimize their programs. The problem is that once the code of the scheduler is changed, some side effects can disappear and the programs using them will no longer work.
+        
+        %TODO 10 issues
+        The central agent contains all the necessary functions to compute the priority of a task. After the priority is computed, all tasks are ordered by their priority and the execution will start by the tasks in the head of the list. Some schedulers support code paths with the jobs. In this case, the actor that submits the job can also submit a path to a code that the scheduler will execute in order to find the priority of a task. In this way, the standard policies of the scheduler can be overridden for certain jobs.
         
        %NOTE add statically partitioned schedulers
        
 	\subsection{Two-level scheduling}
     
-    	This type of scheduling was first introduced by Mesos \cite{mesos}. Two-level schedulers have a single resource manager, but many scheduling frameworks. The purpose of the resource manager is dynamically defining the resources for each scheduler. The manager offers to the scheduler only the resources that are currently unused, and any resource is offered only to one scheduling framework at a time, to avoid conflicts. An important goal of the resource manager is to share the resources fairly between frameworks. YARN [cite], another two-level scheduler used in Apache Hadoop\footnote{Hadoop is an open-source framework that allows processing large data sets across cluster of computers}, lets the scheduling frameworks to ask from resource manager the resources it needs, instead of waiting for an offer.
+    	This type of scheduling was first introduced by Mesos \cite{mesos}. Two-level schedulers have a single resource manager, but many scheduling frameworks. The purpose of the resource manager is dynamically defining the resources for each scheduler. The manager offers to the scheduler only the resources that are currently unused, and any resource is offered only to one scheduling framework at a time, to avoid conflicts. An important goal of the resource manager is to share the resources fairly between frameworks. YARN, another two-level scheduler used in Apache Hadoop\footnote{Hadoop is an open-source framework that allows processing large data sets across a cluster of computers}, lets the scheduling frameworks to ask from resource manager the resources it needs, instead of waiting for an offer.
         
-        The scheduling frameworks in the two level schedulers can be heterogeneous. This means that each framework can target only some particular type of jobs. This distinction between different frameworks can be based on task durations, parallelism of tasks in a job, some constrains of the job etc. The scheduling frameworks have only access to a part of the cluster and do not see the state of whole cluster. Because of this fact, the gang scheduling (more on this in [ref]) might be difficult to implement (because some tasks can require different different types of resources, and all the tasks must be executed at once). Some schedulers as Mesos \cite{mesos}, can let its scheduling frameworks to accumulate resources needed for a gang scheduling, but this might lead to deadlocks.
+        The scheduling frameworks in the two-level schedulers can be heterogeneous. This means that each framework can target only some particular type of jobs. This distinction between different frameworks can be based on the duration of tasks, the parallelism of tasks in a job, some constraints of the job etc. The scheduling frameworks have only access to a part of the cluster and do not see the state of the whole cluster. Because of this fact, the gang scheduling (more on this in \ref{gang}) might be difficult to implement (because some tasks can require different types of resources, and all the tasks must be executed at once). Some schedulers as Mesos \cite{mesos} can let its scheduling frameworks to accumulate resources needed for a gang scheduling, but this might lead to deadlocks.
     
     \subsection{Shared state scheduling}
 
-		A shared state scheduler contains many scheduling frameworks, but no resource manager. The frameworks can be heterogeneous and need to compete with each other to obtain a resource. Each framework contains an replica of the cluster state. If one framework wants to request some resource, it should update its local replica and will send the information about the request to other frameworks. The request may fail if another framework requests the same resource in the meantime. Usually, the scheduling is done in incremental manner - a framework occupies all non-conflicting resources. Although, to perform gang scheduling (all task executed at the same time, or none), a framework can do atomic request - all resources or nothing. Examples of his king of scheduling are Omega \cite{omega} by Google and Apollo \cite{apollo} by Microsoft.
+		A shared state scheduler contains many scheduling frameworks, but no resource manager. The frameworks can be heterogeneous and need to compete with each other to obtain a resource. Each framework contains a replica of the cluster state. If one framework wants to request some resource, it should update its local replica and will send the information about the request to other frameworks. The request may fail if another framework requests the same resource in the meantime. Usually, the scheduling is done in an incremental manner - a framework occupies all non-conflicting resources. Although to perform gang scheduling (all task executed at the same time, or none), a framework can do atomic request - all resources or nothing. Examples of his king of scheduling are Omega \cite{omega} by Google and Apollo \cite{apollo} by Microsoft.
     
     \subsection{Fully-distributed scheduling}
     	%TODO has distributed scheduling gain any popularity?
-    	This kind of scheduling is similar to shared state scheduling, except that the scheduling frameworks don't interact between each other. The schedulers compete with each other to obtain the resources. As Sparrow is an example of a fully-distributed scheduler, a more detailed explanation of this kind of scheduling can be found in \ref{sparrowarchie}.%TODO talk about the disadvantages of fully-distributed scheduling?
+    	This kind of scheduling is similar to shared state scheduling, except that the scheduling frameworks don't interact with each other. The schedulers compete with each other to obtain the resources. As Sparrow is an example of a fully-distributed scheduler. A more detailed explanation of this kind of scheduling can be found in \ref{sparrowarchie}.%TODO talk about the disadvantages of fully-distributed scheduling?
         
     \subsection{Hybrid scheduling}
     
-    	A hybrid scheduler adapts two or more techniques at once. For example, we can combine the techniques of monolithic scheduling and fully-distributed scheduling. A hybrid of this kind should have a central algorithm that decides how a job should be scheduled; if the tasks are short and can be executed in parallel, the job can be scheduled under fully-distributed scheduling technique, otherwise it should be scheduled by the monolithic scheduler.
+        A hybrid scheduler adapts two or more techniques at once. For example, we can combine the techniques of monolithic scheduling and fully-distributed scheduling. A hybrid of this kind should have a central algorithm that decides how a job should be scheduled; if the tasks are short and can be executed in parallel, the job can be scheduled under fully-distributed scheduling technique, otherwise, it should be scheduled by the monolithic scheduler.
 
 
 \section{Possible improuvements}
 
-	Sparrow is very simplistic cluster scheduler - the only techniques it adapats are power of 2 choices, batch sampling, late binding and proactive cancelation. The authors of Sparrow realized that, and during the work, they mentioned on multiple occasions that it needs improuvements. They even provided a list of techniques \cite[section 8]{sparrow} that are used in different schedulers and can improuve Sparrow. Unfortanantly, they were brief in explanation. It would be useful to dig depper in this subject to see what are these techniques, and understand if they are possible to implement in Sparrow.
+	Sparrow is very simplistic cluster scheduler - the only techniques it adapts are the power of 2 choices, batch sampling, late binding and proactive cancelation. The authors of Sparrow realized that, and during the work, they mentioned on multiple occasions that it needs improvements. They even provided a list of techniques \cite[section 8]{sparrow} that are used in different schedulers and can improve Sparrow. Unfortunately, they were brief in explanation. It would be useful to dig deeper into this subject to see what are these techniques and understand if they are possible to implement in Sparrow.
 	
 	\subsection{Preemptive scheduling}
 	
-		Preemption is the process of interrupting a task that is currently executing, in favor of a new task with higher priority that has just arrived. Preemptive scheduling is one technique that is implemented for most of the schedulers, but for Sparrow. In \cite[subsection 7.8]{sparrow}, also explained in \ref{preemption}, the authors studied the effect of low prioirty tasks that are abusing the resources of cluster and not letting the task with high prioirty task to be executed in time. In the experiment, only 25\% of the cluster load was high priority tasks, hence, they could be, and they should be, executed in time. But, because of overpressure of low priority tasks, they get 40 \% worse execution time in average. If Sparrow had preemption, the shedulers could have interupted some low prioirty tasks in favor of high prioirty tasks, and the important job would have shorter execution times.
+		Preemption is the process of interrupting a task that is currently executing, in favor of a new task with higher priority that has just arrived. Preemptive scheduling is one technique that is implemented for most of the schedulers, but not for Sparrow. In \cite[subsection 7.8]{sparrow}, also explained in \ref{preemption}, the authors of Sparrow studied the effect of low priority tasks that are abusing the resources of the cluster and not letting the high priority tasks to be executed in time. In the experiment, only 25\% of the cluster load was high priority tasks, hence, they could be, and they should be, executed in time. But, because of the overpressure of low priority tasks, they get 40 \% worse execution time in average. If Sparrow had preemption, the scheduling frameworks could have interrupted some low priority tasks in favor of high priority tasks, and the important job would have shorter execution times
 		
-		Preemtion scheduling seems to be fairly easy to implement in Sparrow. For recall, Sparrow keeps $N$ priority queues on each working machines; rach of these queues is dedicated to tasks to only one level; when a new slot is empty, the worker is going to take the first reservation from the highes priority queue. If we implement preemption in Sparrow, then, each time a worker gets a new reservation, it should verify if the task in execution (or one of tasks in the execution) has lower priority than the new task.
+		Preemptive scheduling seems to be fairly easy to implement in Sparrow. For recall, Sparrow keeps $N$ priority queues on each working machines; each of these queues is dedicated to tasks of only one level of priority; when a new slot is empty, the worker is going to take the first reservation from the highest priority queue. If we implement preemption in Sparrow, then, each time a worker gets a new reservation, it should verify if the task in execution (or one of the tasks in the execution) has lower priority than the new task. If it is the case, the high priority task can be placed in the slot of the low priority task, and the latter should be placed back in his queue.
 		
-		The only problem related to preemption is context swithching. Context swithcing is the process of saving the state of a process (or task) in the memory until the moment its execution can be resumed, from the point where it was paused. Context switching is needed when a new process with higher priority needs to take the place of the process that is currentlly executing and is not finished yet. The fact of saving the context of paused pprocess and loading the context of the new process, leads to wasted CPU time. When a task is preemted, its current state and variables are stored locally, until the execution can be resumed. The problem Sparrow can face is the rightfullness of the context switching. It is possible that is some scenarios (for example when current task is extreamly short or very close to its end), the context switching will take more time than waiting for the current task to end. It is an important problem because Sparrow is a scheduler for short, low latency tasks. Also, after implementing the preemption scheduling, additional experiments should be made (and some experiment should be redone), to understant how the preemption affected the overall performance of Sparrow. It is possible that it will worsen the avarage task duration. If it is the case, the authors should make a choice between preemption and overall performance.
+		The only problem related to preemption is the \textit{context switching}. Context switching is the process of saving the state of a process (or task) in the memory until the moment its execution can be resumed, from the point where it was paused. Context switching is needed when a new process with a higher priority needs to take the place of the process that is currently executing and is not finished yet. The fact of saving the context of the paused process (storing its current state and all its variables) and then reloading it when the process should be continued leads to wasted CPU time. The problem Sparrow can face is the rightfulness of the context switching. It is possible that is some scenarios (for example when current task is very short or close to its end), it would be more preferable to let the current low priority task to finish. It is an important problem because Sparrow is a scheduler for short, low latency tasks. Also, after implementing the preemption scheduling, additional experiments should be made (and some experiment should be redone), to understand how the preemption affected the overall performance of Sparrow. It is possible that it will worsen the average task duration. If it is the case, the authors should make a choice between preemption and overall performance.
 		
 		
 	\subsection{Inter-job constrains}
@@ -276,6 +311,7 @@ Dr. Alain \textsc{Buys}
 		Another implementation of inter-job cosntrains could be allowing message interactions between the workers and schedulers to find out some constrains can be respected before asigning jobs. But the problem with this solution is that in \cite[subsection 7.9]{sparrow} (also explained in \ref{probingratio}) we saw that if we encreasy the probing ration, the performance of Sparrow drops because workers spend too much time in exchanging messages. Hence, most likely, this solution will also reduce the preformance of Sparrow.
 
 	\subsection{Gang scheduling}
+		\label{gang}
 	
 		Gang scheduling is a technique when some (or even all) tasks of a job are executed at the same time. Usually, this kind of scheduling is needed when different tasks need to communicate with each other during their execution. If these kind of tasks are not in execution in the same time, then, from time to time, some of them should be put into sleep while they wait until the moment when needed tasks can responde. If these kind of tasks are not executed in parallel, a havy overhead can be presend because of constant context switching.
 		

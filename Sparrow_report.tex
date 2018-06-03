@@ -96,8 +96,9 @@ Dr. Alain \textsc{Buys}
 		The main idea of the Sparrow is scheduling tasks in a completely decentralized way. Sparrow is a set of scheduling frameworks (see figure \ref{fig1}) that work independently - they do not exchange any information between each other. When a new job is submitted to the cluster, one of these frameworks will get to assign its tasks to the worker machines. All of the scheduling frameworks work the same way - they are instances of the same code. The exact way of assigning jobs to scheduling frameworks is not discussed in the article, but its implementation on GitHub shows that Sparrow uses a round-robin technic to distribute the jobs among its scheduling frameworks.
 		
 	\begin{figure}
+		\centering
 		\includegraphics[scale=.25]{sparrow}
-		\caption{The set of schedulers is Sparrow. Source: SOSP'13 talk on Sparrow.}
+		\caption{The set of scheduling frameworks is Sparrow. Source: SOSP'13 talk on Sparrow.}
 		\label{fig1}
 	\end{figure}
 
@@ -116,9 +117,11 @@ Dr. Alain \textsc{Buys}
     	As it was stated, a job consists of some number of tasks, and power of 2 choices probes for each of this tasks individually two workers. This might not always return the best result. For example, if one has a job of two tasks, the probing for the first task could return 2 workers with 3 and 4 pending tasks respectively, and the probing for the second task could return workers with 1 and 2 pending tasks respectively. In this case, the first task will be placed on the worker with 3 tasks and the second task will be placed on the worker with 1 task. But intuitively, it will be more efficient to place the first task on the worker with 2 pending tasks. This is exactly what \textit{Batch Sampling} does. When a job with $N$ tasks arrive, $2N$ random workers will be probed at the same time, and the tasks will be placed on the $N$ least loaded workers. Figure \ref{fig2} visualizes this example.
     
     \begin{figure}
-    	\includegraphics[scale=.28]{fig2}
-    	\caption{Source: \cite{sparrow}}
-    	\label{fig2}
+    		\hspace*{-.8in}
+    		\centering
+    		\includegraphics[scale=.35]{fig2}
+    		\caption{Difference between power of 2 choices (par-task sampling) and power of 2 choices with batch sampling. Source: \cite{sparrow}}
+    		\label{fig2}
     \end{figure}
 
 
@@ -139,8 +142,9 @@ Dr. Alain \textsc{Buys}
         
         	The authors did only one theoretical study of Sparrow. The point of this study was to discover the probability for a job to experience a zero wait time \textit{i.e.} the probability for all task of a job to be placed on idle machines.
             
-            \begin{figure}[H]
-            	\centering
+            \begin{table}
+            	\caption{$\rho$ is the cluster load and m is the number of tasks in a job.}	
+            		\centering
                 \begin{tabular}{ | l | l |}
                     \hline
                     Random Placement & $(1-\rho)^m$  \\ \hline
@@ -148,22 +152,22 @@ Dr. Alain \textsc{Buys}
                     Sparrow & $\sum_{i=m}^{2*m}(1-\rho)^i$$\rho^{2*m-i}$${2*m}\choose{i}$ \\
                     \hline
                 \end{tabular}
-                \caption{$\rho$ is the cluster load and m is the number of tasks in a job.}
-        	\end{figure}
+        	\end{table}
             
             In the table above, one can see the probabilities for 3 different techniques to place all tasks of some job on idle workers, in a cluster with single core machines. The authors varied the cluster load from 0 to 1, to obtain the graph in figure 3. It shows that the theoretical probability of Sparrow to place all task on idle machines is very close to 1 when the cluster load is lower than 0.5 and it is very close to 0 when it is higher than 0.5.
             
             \begin{figure}
-            	\includegraphics[scale=.3]{fig3}
-            	\caption{Theoretical probability of Sparrow placing the tasks on idle machines. Because of the fact that we analyze the probability of placing tasks on idle machines, Sparrow will not use the late binding, hence it will be as good as batch sampling.}
-            	\label{fig3}
+            		\centering
+            		\includegraphics[scale=.3]{fig3}
+            		\caption{Theoretical probability of Sparrow placing the tasks on idle machines. Because of the fact that we analyze the probability of placing tasks on idle machines, Sparrow will not use the late binding, hence it will be as good as batch sampling.}
+            		\label{fig3}
             \end{figure}
          
          	%TODO 6 issues   
             The authors also performed the same test on a cluster with 4 core machines. They added an additional constrains to avoid ``gold rush effect'': because of the fact the decentralized schedulers in Sparrow does not share any information between each other, if two of them find the same idle worker at the same time, both will place 4 tasks on that worker; hence, there will be 4 tasks that will experience an unexpected delay. To avoid this problem, Sparrow let each scheduler to place only one task on a single worker. The result of this experiment is that 79.9\% of jobs will be placed on idle workers at 80\% workload.
             
             
-        \subsubsection*{Experiment with TPC-H queries}
+        \subsubsection*{Experiment with TPC-H}
         
         	Another experiment that authors performed was executing queries of TPC-H benchmark on a cluster scheduled by Sparrow. TPC-H\footnote{TPC-H stands for Transaction Processing Council Ad-hoc/decision support benchmark} is a benchmark frequently used for testing the performances of database software. It contains sets of queries that are inspired by real-world scenarios.
             
@@ -173,7 +177,8 @@ Dr. Alain \textsc{Buys}
             The result of this experiment shows that, on average, Sparrow performs only 12\% worse than the ideal scheduler. The performance of the ideal scheduler is computed by supposing that it always places the tasks on idle workers (no task is queued, no job experiences any waiting time). In other words, the execution time of a job, scheduled with the ideal scheduler, is equal to the longest, non-parallel, sequence of tasks in it.
             
             \begin{figure}
-            		\includegraphics[scale=0.5]{fig4}
+            		\centering
+            		\includegraphics[scale=.35]{fig4}
 				\caption{q3, q4, q6, and q12 are respectively the first, the second, the third and the fourth sets.}            		
             		\label{fig4}
             \end{figure}
@@ -199,7 +204,8 @@ Dr. Alain \textsc{Buys}
             The result of this experiment showed that Sparrow is able to fairly share the cluster between different users, but sometimes the cluster may be used not at the maximum of its capacities. The reason of this problem is related of the decentralized nature of Sparrow - it contains many scheduling frameworks that are not inter-connected, hence, they don't have the complete image of the cluster utilization by users. Figure \ref{fig5} illustrates the experiment.
             
             \begin{figure}
-            		\includegraphics[scale=.5]{fig5}
+            		\centering
+            		\includegraphics[scale=.35]{fig5}
             		\caption{Sparrow shares the cluster between two users.}
             		\label{fig5}
             \end{figure}
@@ -214,8 +220,9 @@ Dr. Alain \textsc{Buys}
             %TODO 5 issues
             In this experiment, the authors kept the proportion of the high priority load at 25\% of the cluster capacities and varied the proportion of low priority load. The experiment showed that Sparrow is able to protect the high priority tasks from low priority task when the total cluster load is less than 100\%. But, when the total cluster load is at 100\% or more, the high priority get 40\% worse execution time. The table below shows the complete results of the experiment.
             
-            \begin{figure}[H]
-            		\caption{HP stands for high priority workload, LP stands for low priority workload, the values outside the parentheses are the median response times and the values inside the parentheses are the 95th percentile response times.}
+            \begin{table}
+				\caption{HP stands for high priority workload, LP stands for low priority workload, the values outside the parentheses are the median response times and the values inside the parentheses are the 95th percentile response times.}
+				\centering
                 \begin{tabular}{ | c | c | c | c |}
                     \hline
                     HP load & LP load & HP response time in ms & LP response time in ms  \\ \hline
@@ -226,7 +233,7 @@ Dr. Alain \textsc{Buys}
                     0.25 & 1.75 & 141(226) & 255k(270k) \\
                     \hline
                 \end{tabular}
-        	\end{figure}
+        	\end{table}
         	
         
         \subsubsection*{Why power of 2}
@@ -236,7 +243,8 @@ Dr. Alain \textsc{Buys}
         Another interesting point for authors was to find out if the probing ratio of 2 is the best choice or it is better to have a higher or lower probing ratio. To answer that question, the authors performed two experiments where they varied the probing ratio at constant the cluster load. The first experiment kept the cluster load at 80\% and the second one kept it at 90\%. The range of probing ratio was between 1.0 (1 probing par task \textit{i.e.} random placement) to 3 (3 probings par task). The experiments showed that the best probing ratios are 1.5 and 2 because if the probing ratio is lower, the scheduling frameworks are not able to find idle workers, and if the probing ratio is higher, there is too much message exchange in the cluster and that also delays the probing decision. The authors choose the probing ratio of 2 because it is easier to have an integral probing ratio. The result of the experiment is in figure \ref{fig6}.
         
         \begin{figure}
-        		\includegraphics[scale=.5]{fig6}
+        		\centering
+        		\includegraphics[scale=.35]{fig6}
         		\caption{Effect of probe ratio on job response time at two different cluster loads. Whiskers depict 5th and 95th percentiles; boxes depict median, 25th, and 75th percentiles}
         		\label{fig6}
         \end{figure}
@@ -250,7 +258,8 @@ Dr. Alain \textsc{Buys}
 	Every major company adapts its cluster scheduler to its needs, but basically, one can divide them into five large categories: monolithic, two-level, shared state, fully-distributed, and hybrid. %Monolithic architecture is the most popular. A scheduler of this type is using a centralized algorithm for all jobs. For example, Borg, created and used at Google, is a monolithic scheduler. Two-level schedulers have a single resource manager and much parallel scheduling (like Sparrow). The parallel schedulers are not necessarily homogeneous, and the single resource manager shares the resources between them. Mesos \cite{mesos} is an example of this kind of scheduler. In the case of shared state schedulers, there are many parallel, not necessarily homogeneous, scheduling frameworks. Each of the schedulers has a complete view of the cluster load, and there are no direct interactions between schedulers. Omega \cite{omega} is an example of shared state cluster. The architecture of shared state clusters is the closest, among the 3 aforementioned architectures, to the architecture of Sparrow. Figure 1 illustrates an overview of the three architectures.
     
     \begin{figure}
-    	\includegraphics[scale=.6]{architectures}
+    		\centering
+    	\includegraphics[scale=.5]{architectures}
         \caption{An overview of the most popular scheduling architectures. Source: \cite{omega}. Because of the fact that \cite{omega} discusses only monolithic, two-level and shared states scheduling techniques, the fully-distributed and hybrid scheduling techniques are not illustrated.}
     \end{figure}
 
@@ -293,49 +302,58 @@ Dr. Alain \textsc{Buys}
 	
 		Preemption is the process of interrupting a task that is currently executing, in favor of a new task with higher priority that has just arrived. Preemptive scheduling is one technique that is implemented for most of the schedulers, but not for Sparrow. In \cite[subsection 7.8]{sparrow}, also explained in \ref{preemption}, the authors of Sparrow studied the effect of low priority tasks that are abusing the resources of the cluster and not letting the high priority tasks to be executed in time. In the experiment, only 25\% of the cluster load was high priority tasks, hence, they could be, and they should be, executed in time. But, because of the overpressure of low priority tasks, they get 40 \% worse execution time in average. If Sparrow had preemption, the scheduling frameworks could have interrupted some low priority tasks in favor of high priority tasks, and the important job would have shorter execution times
 		
-		Preemptive scheduling seems to be fairly easy to implement in Sparrow. For recall, Sparrow keeps $N$ priority queues on each working machines; each of these queues is dedicated to tasks of only one level of priority; when a new slot is empty, the worker is going to take the first reservation from the highest priority queue. If we implement preemption in Sparrow, then, each time a worker gets a new reservation, it should verify if the task in execution (or one of the tasks in the execution) has lower priority than the new task. If it is the case, the high priority task can be placed in the slot of the low priority task, and the latter should be placed back in his queue.
+		Preemptive scheduling seems to be fairly easy to implement in Sparrow. For recall, Sparrow keeps $N$ priority queues on each working machines; each of these queues is dedicated to tasks of only one level of priority; when a new slot is empty, the worker is going to take the first reservation from the highest priority queue. If we implement preemption in Sparrow, then, each time a worker gets a new reservation, it should verify if the task in execution (or one of the tasks in the execution) has lower priority than the new task. If it is the case, the high priority task can be placed in the slot of the low priority task, and the latter should be placed back in his queue (or in a queue with higher priority to make sure it will not be paused again in the future).
 		
-		The only problem related to preemption is the \textit{context switching}. Context switching is the process of saving the state of a process (or task) in the memory until the moment its execution can be resumed, from the point where it was paused. Context switching is needed when a new process with a higher priority needs to take the place of the process that is currently executing and is not finished yet. The fact of saving the context of the paused process (storing its current state and all its variables) and then reloading it when the process should be continued leads to wasted CPU time. The problem Sparrow can face is the rightfulness of the context switching. It is possible that is some scenarios (for example when current task is very short or close to its end), it would be more preferable to let the current low priority task to finish. It is an important problem because Sparrow is a scheduler for short, low latency tasks. Also, after implementing the preemption scheduling, additional experiments should be made (and some experiment should be redone), to understand how the preemption affected the overall performance of Sparrow. It is possible that it will worsen the average task duration. If it is the case, the authors should make a choice between preemption and overall performance.
+		The only problem related to preemption is the \textit{context switching}. Context switching is the process of saving the state of a process (or task) in the memory until the moment its execution can be resumed, from the point where it was paused. Context switching is needed when a new process with a higher priority needs to take the place of the process that is currently executing and is not finished yet. The fact of saving the context of the paused process (storing its current state and all its variables) and then reloading it when the process should be continued leads to wasted CPU time. The problem Sparrow can face is the rightfulness of the context switching. It is possible that is some scenarios (for example when current task is very short or close to its end), it would be more preferable to let the current low priority task to finish. It is an important problem because Sparrow is a scheduler for short, low latency tasks.
+		
+		Another limitation of preemption for Sparrow is its decentralized nature. If one worker pauses the execution of a task, he can not pass it to another worker that is free. This leads to the fact that low priority tasks might get large delays. Also, after implementing the preemption scheduling, additional experiments should be made (and some experiment should be redone), to understand how the preemption affected the overall performance of Sparrow. It is possible that it will worsen the average task duration. If it is the case, the authors should make a choice between preemption and overall performance.
 		
 		
 	\subsection{Inter-job constrains}
 	
-		Inter-job contrains lets the owner of a job, force some additional constrains on the worker machines where the tasks of the job are going to be executed. For example, the owner the job A can forbide the scheduler to execute A on a working machine where some job B is executing. Because of the fact that the sheduling frameworks work independantly, it is not possible to force this king of constrains. The authors say that inter-job constrains will require considerable modification of Sparrow code base \cite[section 8]{sparrow}, but there might be a way of implementing it with no major modifications.
+		Inter-job constraints let the owner of a job, force some additional constraints on the worker machines where the tasks of the job are going to be executed. For example, a user A can forbid the scheduler to assign his jobs to worker machines where some particular user B's jobs are executing. Because of the fact that Sparrow's scheduling frameworks work independently, it is not possible to force this kind of constraints. The authors say that inter-job constraints will require considerable modification of Sparrow code base \cite[section 8]{sparrow}, but there might be a way of implementing it with no major modifications.
 		
-		To implement inter-job constrains of type ``tasks of job A should not be executed with tasks of job B'', sparrow can add an additional queue on each worker machine. A scheduling framework can ask the scheduler to place the reservations for some tasks to this special queue. The worker machines should execute the tasks from this queue only whene no other tasks from any other queue is executing. If all slots of a worker machine execute the tasks from the same job, it is obvious that that jobs tasks will not be executing with any other job tasks. This implementation may reqire some changes not only in the functioning of working machines, but also in the way how scheduling place their tasks on worker. The reason of this is the constrains that the authors forces to the scheduler \cite[section 5]{sparrow}: no sheduler should place more than one task on a single working machine, to avoid the gold rush effect.
+		To implement inter-job constraints of type ``tasks of user A should not be executed with tasks of user B'', sparrow can add an additional queue on each worker machine. A scheduling framework can ask the scheduler to place the reservations for some tasks to this special queue. The worker machines should execute the tasks from this queue only when no other tasks from any other queue is executing. If all slots of a worker machine execute the tasks from the same job, it is obvious that one job tasks will not be executed along with any other job tasks. This implementation may require some changes not only in the functioning of working machines but also in the way how scheduling framework place their tasks on workers. The reason of this is the constraints that the authors forced to the scheduler \cite[section 5]{sparrow}: no scheduling framework should place more than one task on a single working machine, to avoid the gold rush effect.
 		
-		In the case if two jobs, A and B, should be executed on the same machine, the agent, that asigns the jobs to the sheduling frameworks, can merge these two jobs into one and the scheduler should place the tasks on the same worker.
+		In the case, if two jobs, A and B, should be executed on the same machine, the agent, that assigns the jobs to the scheduling frameworks, can merge these two jobs into one and the framework should place the tasks on the same worker.
 		
-		This is just one possible implementation of inter-job constrains that seems to be possible, and do not need mojor changes in the SParrow code base. But again, this implementation might slow down the performace of Sparrow, and needs to be well tested.
+		This is just one possible implementation of inter-job constraints that seems to be possible, and do not need major changes in the Sparrow code base. Although, this solution does change some aspects of job assignment to the workers. And again, this implementation might slow down the performance of Sparrow, and needs to be well tested.
 		
-		Another implementation of inter-job cosntrains could be allowing message interactions between the workers and schedulers to find out some constrains can be respected before asigning jobs. But the problem with this solution is that in \cite[subsection 7.9]{sparrow} (also explained in \ref{probingratio}) we saw that if we encreasy the probing ration, the performance of Sparrow drops because workers spend too much time in exchanging messages. Hence, most likely, this solution will also reduce the preformance of Sparrow.
+		Another implementation of inter-job constraints could be allowing message interactions between workers machines and scheduling frameworks to find out if some constraints can be respected before assigning jobs. But the problem with this solution is that in \cite[subsection 7.9]{sparrow} (also explained in \ref{probingratio}) if we increase the probing ration, the performance of Sparrow drops because workers spend too much time in exchanging messages. Hence, most likely, increasing message exchanges for inter-job constraints support will also affect the performance of Sparrow.
 
 	\subsection{Gang scheduling}
 		\label{gang}
 	
-		Gang scheduling is a technique when some (or even all) tasks of a job are executed at the same time. Usually, this kind of scheduling is needed when different tasks need to communicate with each other during their execution. If these kind of tasks are not in execution in the same time, then, from time to time, some of them should be put into sleep while they wait until the moment when needed tasks can responde. If these kind of tasks are not executed in parallel, a havy overhead can be presend because of constant context switching.
+		Gang scheduling is a technique when some (or even all) tasks of a job are executed at the same time. Usually, this kind of scheduling is needed when different tasks need to communicate with each other during their execution. If these kind of tasks are not in execution in the same time, then, from time to time, some of them should be put into sleep while they wait until the moment when needed tasks can respond. If these tasks are not executed in parallel, a heavy overhead can be present because of constant context switching.
 		
-		The authors \cite[section 8]{sparrow} suggest that gang scheduling could be implemented using the bin packing problem. It is a mathematical problem of minimazing the number of bins we need to place a finit number of object into them. As it was explained \ref{batchsampling}, Sparrow uses batch samling to find the $N$ list loaded worker machines to place tasks on them. While it happens often that tasks are placed on idle machines \ref{theoreticalanalysis}, it is not guarantied. To trully implement gang scheduling, the scheduler need a central agent that can has view of the whole cluster. But implementing such kind of agent opposes to the principal idea of Sparrow. It will be difficlt to implement gang scheduling ina decentralized scheduler like Sparrow.
+		The authors \cite[section 8]{sparrow} suggest that gang scheduling could be implemented using the bin packing problem. It is a mathematical problem of minimizing the number of bins we need to place a finite number of objects into them. As it was explained \ref{batchsampling}, Sparrow uses batch sampling to find the $N$ list loaded worker machines to place tasks on them. Whilst it happens often that tasks are placed on idle machines \ref{theoreticalanalysis}, it is not guaranteed. To truly implement gang scheduling, the scheduler needs a central agent that has a view of the whole cluster. But implementing such kind of agent opposes to the principal idea of Sparrow. It will be difficult to implement gang scheduling in a decentralized scheduler like Sparrow.
 		
-		One naive way of implementing it would be using preemption. If the tasks that should be gang-scheduled are given very high priority, they worker machines will pause currently executing tasks (if needed) to execute the new tasks in a gang. The only problem is that by doint so, we will have an overhead related to context switching (which is the initial reason to implement gang scheduling). Also, in this situation, if two gangs are overlapped, the second gang cand interruped the execution of the first gang, and, again, lead to overhead because of context switching.
+		One naive way of implementing it would be using preemption. If the tasks that should be gang-scheduled are given very high priority, the worker machines will pause currently executing tasks (if needed) to execute the new tasks in a gang. The only problem is that by doing so, we will have an overhead related to context switching for paused tasks, and avoiding the context switching is the initial reason to implement gang scheduling. Also, in this situation, if two gangs are overlapped, the second gang can interrupt the execution of the first gang, and, again, this will lead to overhead because of context switching.
 		
-		%Query-level policies
+		%TODO Query-level policies
 		
 	\subsection{Worker failures}
 	
-		The failures of scheduling frameworks are regullary probed every 100 ms in centralized manner, but the the failures of workers are not tracked at all. In the case if a worker failes, the schedulers will not know if it is functioning. If, during batch sampling, scheduler probes $N$ machines, only $N - m$ workers will actually try to claim a task from the scheduler, with $m$ the number of failed workers. The authors \cite{sparrow} did not give any information about what happens with the tasks that were executing on workers at the moment on fail.
+		The scheduling frameworks are regularly probed every 100 ms to find if one of them has failed, but the failures of worker machines are not tracked at all. In the case, if a worker fails, the frameworks will not know if it is functioning. If during batch sampling, $m$ worker machines fail, the scheduling framework will probe only $2N - m$ worker machines, without knowing. Also, another problem with worker machine failure is what happens to the tasks that were executing during the failure - all the progress is lost and the tasks should be restarted.
 		
-		The worker failure conrol can be implemented in a centraliezed way, like scheduler failure control. The authors think that the best solution is to have a centralized agent that verifies the functioning of the workers, and placed the failed worker in a soft state list. The scheduluers will be periodically informed about the worker in the list so that they do not probe failed workers.
+		The worker failure control can be implemented in a centralized way, like scheduler failure control. The authors think that the best solution is to have a centralized agent that verifies the functioning of the worker machines, and places the failed worker in a soft state list. The framework should periodically check the list so that they do not probe failed workers.
 		
-		The soft state is a termin usually used in networking. It means a list that is regulary cleared after a fixed period of time. In the case of worker failures, the list will contain the workers that are failed; once every $n$ ms, the list is emptied - if a worker is still unavailable, it should be replaced in the list; normally, $n$ should be equal to the time the central agent needs to detect and relanch a failed worker.
+		The \textit{soft state} is a term usually used in networking. It means a list that is regularly cleared after a fixed period of time. In the case of worker failures, the list will contain the workers that are failed; once every $n$ ms, the list is emptied - if a worker is still unavailable, it should be placed again in the list; normally, $n$ should be equal to the time the central agent needs to detect and relaunch a failed worker.
 	
 	\subsection{Dinamically adapting probing ratio}
 	
-		In the \cite[subsection 7.9]{sparrow} (also explained in \ref{preemption}), the authors already studied the effect of ratio. The experiment conlcuded that if we have a small probing ratio, it is difficult for scheduler to find lightly loaded machines and if the probing ratin is large, there is too many message echanges between worker and schedulers - this leads to overhead and dealays the speed of decision making. But this experiment was done only twice, once with 80\% cluster load and once with 90\% cluster load. These are very high cluster loads, and the cluster load is going to be variable. Moreover, \textit{Reiss and al} \cite{hetero} claim that the overall CPU usage of Google clusters does not exceed 60 \% (figure toref google). Hence, it is possible that the 2 is not the best solution.
+		In the \cite[subsection 7.9]{sparrow} (also explained in \ref{preemption}), the authors already studied the effect of probing ratio. The experiment concluded that if we have a small probing ratio, it is difficult for scheduling frameworks to find lightly loaded machines and if the probing ratio is large, there are too many message exchanges between worker and scheduling frameworks - this leads to overhead and delays the speed of decision making. But this experiment was done only twice, once with 80\% cluster load and once with 90\% cluster load. These are very high cluster loads, and the cluster load is going to be variable. Moreover, \textit{Reiss and al} \cite{hetero} claim that the overall CPU usage of Google clusters does not exceed 60 \% (figure \ref{google}). Hence, it is possible that having a constant probing ratio of 2 is not the best solution.
 		
-		Is is possible to achieve conisderably better results by adjust the probing ratio to the clsuter load. If the cluster load is low, the schedulers could do more probes to be more succesfull in finding lightly loaded machines; if the cluster is highly load, the probong ratio should decrease to reduce the messaging overhead in the system. Obviousy, it would require to find out experientally the equation that adapts the probing ration the best, depending on the cluster load.
+		\begin{figure}
+			\centering
+			\includegraphics[scale=.5]{google}
+			\caption{Moving hourly average of CPU (top) and memory (bottom) utilization (left) and resource requests (right). The dashed line near the top of each plot shows the total capacity of the cluster. Source: \cite{hetero}}
+			\label{google}
+		\end{figure}
 		
-		The main difficulty of dynamically adapting the probing ration is the decentralism of Sparrow - to adapt the probing ration to the cluster load, Sparrow needs to determine this load. It would require to implement some mechnism that will keep track of the workers' load and tasks that are still to schedule. This mecanism will considerably change the architecture of Sparrow, and will need a practial testing.
+		It might be possible to achieve better results by adjusting the probing ratio to the cluster load. If the cluster load is low, the schedulers could do more probes to be more successful in finding lightly loaded machines; if the cluster is highly loaded, the probing ratio should decrease to reduce the messaging overhead in the system. Obviously, it would require to find out experimentally the equation that adapts the probing ration the best, depending on the cluster load.
+		
+		The main difficulty of dynamically adapting the probing ratio is the decentralism of Sparrow - to adapt the probing ratio to the cluster load, Sparrow needs to determine this load. It would require to implement some mechanism that will keep track of the workers' load and tasks that are still to schedule. This mechanism may considerably change the architecture of Sparrow and will need a practical testing.
 		
 
 

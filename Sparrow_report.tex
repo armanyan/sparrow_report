@@ -277,7 +277,7 @@ Dr. Alain \textsc{Buys}
        
 	\subsection{Two-level scheduling}
     
-    	This type of scheduling was first introduced by Mesos \cite{mesos}. Two-level schedulers have a single resource manager, but many scheduling frameworks. The purpose of the resource manager is dynamically defining the resources for each scheduler. The manager offers to the scheduler only the resources that are currently unused, and any resource is offered only to one scheduling framework at a time, to avoid conflicts. An important goal of the resource manager is to share the resources fairly between frameworks. YARN, another two-level scheduler used in Apache Hadoop\footnote{Hadoop is an open-source framework that allows processing large data sets across a cluster of computers}, lets the scheduling frameworks to ask from resource manager the resources it needs, instead of waiting for an offer.
+    	This type of scheduling was first introduced by Mesos \cite{mesos}. Two-level schedulers have a single resource manager, but many scheduling frameworks. The purpose of the resource manager is dynamically defining the resources for each scheduler. The manager offers to the scheduler only the resources that are currently unused, and any resource is offered only to one scheduling framework at a time, to avoid conflicts. An important goal of the resource manager is to share the resources fairly between frameworks. YARN, another two-level scheduler\footnote{Althought \textit{Schwarzkopf and al} \cite{omega} say that YARN is a monolithic scheduler because of the functioning of some of its components.} used in Apache Hadoop\footnote{Hadoop is an open-source framework that allows processing large data sets across a cluster of computers}, lets the scheduling frameworks to ask from resource manager the resources it needs, instead of waiting for an offer.
         
         The scheduling frameworks in the two-level schedulers can be heterogeneous. This means that each framework can target only some particular type of jobs. This distinction between different frameworks can be based on the duration of tasks, the parallelism of tasks in a job, some constraints of the job etc. The scheduling frameworks have only access to a part of the cluster and do not see the state of the whole cluster. Because of this fact, the gang scheduling (more on this in \ref{gang}) might be difficult to implement (because some tasks can require different types of resources, and all the tasks must be executed at once). Some schedulers as Mesos \cite{mesos} can let its scheduling frameworks to accumulate resources needed for a gang scheduling, but this might lead to deadlocks.
     
@@ -355,6 +355,12 @@ Dr. Alain \textsc{Buys}
 		
 		The main difficulty of dynamically adapting the probing ratio is the decentralism of Sparrow - to adapt the probing ratio to the cluster load, Sparrow needs to determine this load. It would require to implement some mechanism that will keep track of the workers' load and tasks that are still to schedule. This mechanism may considerably change the architecture of Sparrow and will need a practical testing.
 		
+\section{Conclusion}
+
+	Sparrow has gained some attention in the academic world - it is even considered to be the first fully-decentralized scheduler in the industry. But the problem of Sparrow is that big companies still prefer to use the monolithic or two-level schedulers. It is so because, usually, the clusters are not used only for one type of jobs, there execute \textit{service} jobs and \textit{batch} jobs at the same time. Service jobs are the end-user jobs like web-services and they are generally short. On the other hand, batch jobs are the jobs that perform heavy computations like analytics or manipulations with big internal databases, whose execution can take up to many days. As we have seen during the experiments, in these situations, Sparrow does not perform very well. Also, as \ref{google} shows, big companies prefer to add resources to their clusters rather than facing problems due to change of the cluster scheduler.
+	
+	As of today, Sparrow stays only an academic work. The last commits to the code base of Sparrow on GitHub dates of 2013, which is also the year of its presentation. None of the technics discussed in the future work section of the paper was implemented and on the discussion of Sparrow on Google Groups \cite{group}, the users claim that Sparrow is not building up anymore because of its outdated dependencies. Because of these facts, we can say that the implementation of Sparrow is abandoned and the idea of fully-decentralized scheduling has not gained popularity yet.
+		
 
 
 
@@ -373,6 +379,12 @@ Dr. Alain \textsc{Buys}
   \textit{Official Github repository of Sparrow},
   \url{https://github.com/radlab/sparrow},
   [Online; accessed June 2018].
+  
+\bibitem{group}
+  K. Ousterhout,
+  \textit{Discussion of Sparrow on Google Groups},
+  \url{https://groups.google.com/forum/#!forum/sparrow-scheduler-users},
+  [Online; accessed June 2018]
 
 \bibitem{power}
   M. Mitzenmacher
